@@ -266,7 +266,7 @@ function runServer() {
 
     // If adding more than one thing, use MultipleThings() with a name.
     // In the single thing case, the thing's name will be broadcast.
-    const server = new WebThingServer(new MultipleThings(things), 8888);
+    const server = new WebThingServer(new MultipleThings(things), 8889);
 
     process.on('SIGINT', () => {
         server.stop().then(() => process.exit()).catch(() => process.exit());
