@@ -212,7 +212,7 @@ function runServer() {
         },
     }
 
-    // Create the Webthing Things and send an info command / status to the devices to update the property 'shutter' of each device
+    // Create the Webthing Things
     for (const key in link2homedevices) {
         const link2homedevice = link2homedevices[key];
         const thing = makeThing(link2homedevice);
