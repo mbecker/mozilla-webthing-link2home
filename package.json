@@ -1,0 +1,15 @@
+{
+  "name": "link2home-thing",
+  "version": "0.0.1",
+  "description": "Link2Home devices as a Webthing Node",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "mbecker <mats.becker@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "uuid": "8.0.0",
+    "webthing": "0.12.2"
+  }
+}
