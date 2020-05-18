@@ -212,6 +212,32 @@ function runServer() {
         },
     }
 
+    // Create the Webthing Things and send an info command / status to the devices to update the property 'shutter' of each device
+    for (const key in link2homedevices) {
+        const link2homedevice = link2homedevices[key];
+        const thing = makeThing(link2homedevice);
+        link2homedevices[key]['thing'] = thing;
+        things.push(link2homedevices[key]['thing']);
+    }
+
+    // If adding more than one thing, use MultipleThings() with a name.
+    // In the single thing case, the thing's name will be broadcast.
+    const server = new WebThingServer(new MultipleThings(things), 8889);
+
+    process.on('SIGINT', () => {
+        server.stop().then(() => process.exit()).catch(() => process.exit());
+        client.close();
+    });
+
+    server.start().catch(console.error);
+
+    /*
+     * UDP Client
+     */
+
+     // UPD Client eventlistener for 'onmessage'
+     // Find for each incoming message the corresponding link2homedevice and it's Webthing Thing
+     // Set the Webthing Thing's property 'shutter' to the status of the incoming parsed message
     client.on('message', function (msg, info) {
         const hexMsg = utf8ToHex(msg);
         const command = extractCommandFromHex(hexMsg);
@@ -233,26 +259,6 @@ function runServer() {
         }
 
     });
-
-
-    // Create the Webthing Things and send an info command / status to the devices to update the property 'shutter' of each device
-    for (const key in link2homedevices) {
-        const link2homedevice = link2homedevices[key];
-        const thing = makeThing(link2homedevice);
-        link2homedevices[key]['thing'] = thing;
-        things.push(link2homedevices[key]['thing']);
-    }
-
-    // If adding more than one thing, use MultipleThings() with a name.
-    // In the single thing case, the thing's name will be broadcast.
-    const server = new WebThingServer(new MultipleThings(things), 8889);
-
-    process.on('SIGINT', () => {
-        server.stop().then(() => process.exit()).catch(() => process.exit());
-        client.close();
-    });
-
-    server.start().catch(console.error);
 
     client.on("listening", function () {
         console.log("UDP Client listening on ", client.address());
