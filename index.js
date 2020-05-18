@@ -258,13 +258,8 @@ function runServer() {
         things.push(link2homedevices[key]['thing']);
         const data = START + link2homedevice['mac'] + END + STOP;
         const data1 = Buffer.from(data, 'hex');
-        client.send(data1, 35932, "192.168.0.255", error => {
-            if (error) {
-                console.log(error)
-            } else {
-                this.thing.setProperty('shutter', 'jammed');
-            }
-        })
+        // Send a message to each device to requests it's status; the event listener client.on('message') should then handle the incoming message with the status tu update the property status of the device
+        client.send(data1, 35932, "192.168.0.255");
     }
 
     // If adding more than one thing, use MultipleThings() with a name.
