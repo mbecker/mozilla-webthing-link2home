@@ -235,21 +235,6 @@ function runServer() {
     });
 
 
-    client.on("listening", function () {
-        console.log("UDP Client listening on ", client.address());
-        client.setBroadcast(true);
-        client.setTTL(64);
-        client.setMulticastTTL(64);
-        client.setMulticastLoopback(true);
-    });
-    client.on("close", function () {
-        console.log("UDP Client closed");
-    });
-    client.on("error", function (err) {
-        console.log("UDP Client error: ", err);
-    });
-    client.bind(35932);
-
     // Create the Webthing Things and send an info command / status to the devices to update the property 'shutter' of each device
     for (const key in link2homedevices) {
         const link2homedevice = link2homedevices[key];
@@ -275,6 +260,31 @@ function runServer() {
     });
 
     server.start().catch(console.error);
+
+    client.on("listening", function () {
+        console.log("UDP Client listening on ", client.address());
+        client.setBroadcast(true);
+        client.setTTL(64);
+        client.setMulticastTTL(64);
+        client.setMulticastLoopback(true);
+
+         // Send a message to each device to requests it's status; the event listener client.on('message') should then handle the incoming message with the status tu update the property status of the device
+         const data = START + link2homedevice['mac'] + END + STOP;
+        for (const key in link2homedevices) {
+            const link2homedevice = link2homedevices[key];
+            const data1 = Buffer.from(data, 'hex');
+            client.send(data1, 35932, "192.168.0.255", (err) => {
+                if(err) console.log(err);
+            });
+        }
+    });
+    client.on("close", function () {
+        console.log("UDP Client closed");
+    });
+    client.on("error", function (err) {
+        console.log("UDP Client error: ", err);
+    });
+    client.bind(35932);
 }
 
 runServer();
