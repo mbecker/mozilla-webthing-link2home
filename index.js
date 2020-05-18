@@ -74,7 +74,7 @@ class LockAction extends Action {
 
     performAction() {
         return new Promise((resolve) => {
-            const data = START + this.thing.id + END + FF;
+            const data = START + this.thing.id + END + OFF;
             const data1 = Buffer.from(data, 'hex');
             client.send(data1, 35932, "192.168.0.255", error => {
 
