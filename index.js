@@ -26,7 +26,7 @@ const hexToUtf8 = convert('hex', 'utf8')
  * @param {string} hexMsg - The message in HEX format ('a10498d8632796860009bc2d02f271500301ff')
  * @returns {string} - The MAC adress
  */
-const extractMacFromHex = (hexMsg) => hexMsg.slice(START.length, hexMsg.length - END.length - ON.length);
+const extractMacFromHex = (hexMsg) => hexMsg.slice(UDP_DATA_START.length, hexMsg.length - UDP_DATA_END.length - UDP_COMMAND_ON.length);
 
 /**
  * Extracts the HEX value command from the HEX message sent by the Link2Home device
@@ -41,20 +41,26 @@ const extractCommandFromHex = (hexMsg) => hexMsg.slice(hexMsg.length - 2, hexMsg
  */
 const getLockStatus = (command) => {
     command = command.toLowerCase();
-    if (command === ON.toLowerCase()) return 'unlocked';
-    if (command === OFF.toLowerCase()) return 'locked';
-    if (command === STOP.toLowerCase()) return 'jammed';
+    if (command === UDP_COMMAND_ON.toLowerCase()) return 'unlocked';
+    if (command === UDP_COMMAND_OFF.toLowerCase()) return 'locked';
+    if (command === UDP_COMMAND_STOP.toLowerCase()) return 'jammed';
     return 'unknown';
 }
 
-const START = 'a104';
 
-const ON = 'ff'; // Hoch
-const OFF = '00'; // Runter
-const STOP = '02'; // Stopp
-const INFO = '23';
+/*
+ * UDP Data packet for the Link2Home Devices is defined as follows:
+ * UDP_DATA_START + MAC ADRESS OF LINK2HOME DEVICE + UDP_DATA_END + UDP_COMMAND
+ */
+const UDP_DATA_START = 'a104';
+const UDP_DATA_END = '000901f202d171500101';
 
-const END = '000901f202d171500101';
+const UDP_COMMAND_ON = 'ff'; // Hoch
+const UDP_COMMAND_OFF = '00'; // Runter
+const UDP_COMMAND_STOP = '02'; // Stopp
+const UDP_COMMAND_INFO = '23';
+
+
 
 
 /**
@@ -74,14 +80,15 @@ class LockAction extends Action {
 
     performAction() {
         return new Promise((resolve) => {
-            const data = START + this.thing.id + END + OFF;
+            const data = UDP_DATA_START + this.thing.id + UDP_DATA_END + UDP_COMMAND_OFF;
             const data1 = Buffer.from(data, 'hex');
+            
+            // Send UDP data packet to device to "Lock down the shutter (off)"
             client.send(data1, 35932, "192.168.0.255", error => {
-
                 if (error) {
                     console.log(error)
                 } else {
-                    this.thing.setProperty('shutter', 'locked');
+                    this.thing.setProperty('shutter', 'jammed');
                 }
             })
             resolve();
@@ -97,13 +104,16 @@ class UnlockAction extends Action {
 
     performAction() {
         return new Promise((resolve) => {
-            const data = START + this.thing.id + END + ON;
+            const data = UDP_DATA_START + this.thing.id + UDP_DATA_END + UDP_COMMAND_ON;
             const data1 = Buffer.from(data, 'hex');
+            
+
+            // Send UDP data packet to device to "unlock up the shutter (on)"
             client.send(data1, 35932, "192.168.0.255", error => {
                 if (error) {
                     console.log(error)
                 } else {
-                    this.thing.setProperty('shutter', 'unlocked');
+                    this.thing.setProperty('shutter', 'jammed');
                 }
             })
             resolve();
@@ -111,15 +121,17 @@ class UnlockAction extends Action {
     }
 }
 
-class StopkAction extends Action {
+class StopAction extends Action {
     constructor(thing, input) {
         super(uuidv4(), thing, 'stop', input);
     }
 
     performAction() {
         return new Promise((resolve) => {
-            const data = START + this.thing.id + END + STOP;
+            const data = UDP_DATA_START + this.thing.id + UDP_DATA_END + UDP_COMMAND_STOP;
             const data1 = Buffer.from(data, 'hex');
+
+            // Send UDP data packet to device to "stop up the shutters"
             client.send(data1, 35932, "192.168.0.255", error => {
                 if (error) {
                     console.log(error)
@@ -179,7 +191,7 @@ function makeThing(link2homedevice) {
             'title': 'Stop',
             'description': 'Rolladen Stop',
 
-        }, StopkAction);
+        }, StopAction);
 
 
 
@@ -270,7 +282,7 @@ function runServer() {
         // Send a message to each device to requests it's status; the event listener client.on('message') should then handle the incoming message with the status tu update the property status of the device
         for (const key in link2homedevices) {
             const link2homedevice = link2homedevices[key];
-            const data = START + link2homedevice['mac'] + END + STOP;
+            const data = UDP_DATA_START + link2homedevice['mac'] + UDP_DATA_END + UDP_COMMAND_STOP;
             const data1 = Buffer.from(data, 'hex');
             client.send(data1, 35932, "192.168.0.255", (err) => {
                 if (err) console.log(err);
